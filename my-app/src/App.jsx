@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
@@ -8,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 // import { Zap } from 'lucide-react'; 
 
 // FlaskサーバーのURL（ポート5000）
-const API_URL = 'http://localhost:5000/api/message';
+const API_URL = 'http://hackathon2025-10-backend.onrender.com/healthz';
 
 // Tailwind CSSクラスを直接使用（Viteプロジェクトの一般的な設定）
 
