@@ -1,0 +1,59 @@
+name: Deploy Frontend (Vite) to EC2
+on:
+  push:
+    branches: [ "main" ]      # デプロイしたいブランチに合わせる
+    paths:
+      - "**/*.js"
+      - "**/*.jsx"
+      - "**/*.tsx"
+      - "**/*.ts"
+      - "package.json"
+      - "package-lock.json"
+      - "vite.config.*"
+      - "index.html"
+      - "public/**"
+      - "src/**"
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"     # プロジェクトに合わせて
+      - name: Install & Build (Vite)
+        run: |
+          npm ci
+          npm run build
+        # ここで dist/ が生成される
+      # アトミックに反映：distを一時ディレクトリへ転送 → サーバ側で入れ替え
+      - name: Upload dist to EC2 (tmp)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.FE_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "dist/*"
+          target: "/home/${{ secrets.SSH_USER }}/fe_tmp/"
+      - name: Publish on server (atomic swap)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.FE_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -e
+            TMP_DIR="/home/${{ secrets.SSH_USER }}/fe_tmp"
+            TARGET="${{ secrets.FE_PATH }}"
+            # 一時→本番へアトミックに入れ替え
+            sudo mkdir -p "$TARGET"
+            sudo rsync -av --delete "$TMP_DIR"/ "$TARGET"/
+            rm -rf "$TMP_DIR"
+            # 権限整備（任意）
+            sudo chown -R nginx:nginx "$TARGET" || true
+            sudo find "$TARGET" -type d -exec chmod 755 {} \;
+            sudo find "$TARGET" -type f -exec chmod 644 {} \;
+            # Nginx リロード（nginx.conf変更時のみ必要だが念のため）
+            sudo systemctl reload nginx || true
