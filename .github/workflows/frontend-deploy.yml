@@ -1,8 +1,8 @@
 name: Deploy Frontend (Vite) to EC2
 on:
   push:
-    branches: [ "main" ]      # デプロイしたいブランチに合わせる
-    paths:
+    branches: [ "main" ] 
+    paths: # 変更があった場合にのみ実行されるパスのリスト
       - "**/*.js"
       - "**/*.jsx"
       - "**/*.tsx"
@@ -17,26 +17,35 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
-      - name: Use Node
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"     # プロジェクトに合わせて
-      - name: Install & Build (Vite)
+          node-version: "20" # Node.jsのバージョンを指定
+
+      - name: Install Dependencies & Build (Vite)
         run: |
-          npm ci
-          npm run build
-        # ここで dist/ が生成される
-      # アトミックに反映：distを一時ディレクトリへ転送 → サーバ側で入れ替え
+          # 依存関係のインストール（CI環境ではnpm ciが推奨）
+          npm ci 
+          # Viteのビルドコマンドを実行
+          npm run build 
+
+      # --- ステップ 1: distを一時ディレクトリへ転送 (scp-action) ---
       - name: Upload dist to EC2 (tmp)
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.FE_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          source: "dist/*"
-          target: "/home/${{ secrets.SSH_USER }}/fe_tmp/"
+          # 転送元: distディレクトリ全体を再帰的に転送
+          source: "dist" 
+          # 転送先: SSHユーザーのホームディレクトリ配下に一時ディレクトリを作成
+          # 転送先は末尾にスラッシュを付けない方が安全です
+          target: "/home/${{ secrets.SSH_USER }}/" 
+
+      # --- ステップ 2: サーバー側で配置（ssh-action） ---
       - name: Publish on server (atomic swap)
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -45,15 +54,30 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             set -e
-            TMP_DIR="/home/${{ secrets.SSH_USER }}/fe_tmp"
-            TARGET="${{ secrets.FE_PATH }}"
-            # 一時→本番へアトミックに入れ替え
-            sudo mkdir -p "$TARGET"
-            sudo rsync -av --delete "$TMP_DIR"/ "$TARGET"/
-            rm -rf "$TMP_DIR"
-            # 権限整備（任意）
-            sudo chown -R nginx:nginx "$TARGET" || true
-            sudo find "$TARGET" -type d -exec chmod 755 {} \;
-            sudo find "$TARGET" -type f -exec chmod 644 {} \;
-            # Nginx リロード（nginx.conf変更時のみ必要だが念のため）
+            
+            # 変数を設定
+            # fe_tmpディレクトリは一つ上のステップで /home/user/dist に転送されています
+            SRC_DIR="/home/${{ secrets.SSH_USER }}/dist" 
+            TARGET_DIR="${{ secrets.FE_PATH }}"
+            
+            # --- 【重要】権限に関する修正 ---
+            # 1. ターゲットディレクトリの作成（sudoで実行）
+            sudo mkdir -p "$TARGET_DIR"
+            
+            # 2. rsyncでファイル転送
+            # rsyncをsudo付きで実行すると、ファイルのオーナーがrootになる場合があります
+            # 今回はsudoなしで実行し、後のchownで権限を調整します
+            rsync -av --delete "$SRC_DIR"/ "$TARGET_DIR"/
+            
+            # 3. ファイルの所有者と権限を調整
+            # Nginxが動くユーザー（例: nginx, www-data）に変更
+            # 実行ユーザーがsudo権限を持っていることを前提とします
+            sudo chown -R nginx:nginx "$TARGET_DIR" || true
+            sudo find "$TARGET_DIR" -type d -exec chmod 755 {} \;
+            sudo find "$TARGET_DIR" -type f -exec chmod 644 {} \;
+            
+            # 4. 一時ディレクトリ（転送元）の削除
+            rm -rf "$SRC_DIR"
+            
+            # 5. Nginxサービスのリロード（設定変更がないなら不要ですが安全のため残します）
             sudo systemctl reload nginx || true
