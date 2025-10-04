@@ -31,20 +31,41 @@ const Dashboard = () => {
               <SummaryCard title="今月残高" amount={200000} type="balance" />
             </Grid>
           </Grid>
+          <br></br>
+          <br></br>
+
           <Grid item xs={12} md={5}>
-        <Paper
-          sx={{
-            p: 1,
-            height: '100%',
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <AvatarPanel userId={1} />
-        </Paper>
-      </Grid>
+  <Paper
+    elevation={8}
+    sx={{
+      p: { xs: 2, md: 3 },
+      height: '300px',
+      width: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 3,
+      position: 'relative',
+      overflow: 'hidden',
+      // グラデ背景（ヒーロー感）
+      background: 'linear-gradient(135deg, #0EA5E9 0%, #6366F1 50%, #A855F7 100%)',
+      // 強めのシャドウ
+      boxShadow:
+        '0 10px 25px rgba(0,0,0,0.25), inset 0 0 80px rgba(255,255,255,0.08)',
+      // ほんのり光るオーバーレイ
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        inset: -80,
+        background: 'radial-gradient(closest-side, rgba(255,255,255,0.18), transparent 70%)',
+        filter: 'blur(30px)',
+        transform: 'translate(20%, -20%)',
+      },
+    }}
+  >
+    <AvatarPanel userId={1} size={240} highlight showStats />
+  </Paper>
+</Grid>
           <Typography variant="h5" sx={{ mt: 4 }}>
             カレンダービュー
           </Typography>
