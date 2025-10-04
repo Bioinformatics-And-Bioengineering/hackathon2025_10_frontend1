@@ -30,7 +30,7 @@ const App = () => {
         }
 
         const data = await response.json();
-        setApiMessage(data.ok);
+        setApiMessage(data);
         
         setError(null);
       } catch (err) {
