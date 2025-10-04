@@ -30,9 +30,11 @@ const formatDateToKey = (date) => {
   const day = String(d.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
-
+// const onAddTransaction = () =>{
+//    setTransactions(prev => [...prev, newTransaction]);
+// }
 // Propsとして onAddTransaction を受け取る
-const TransactionForm = ({ onAddTransaction }) => {
+const TransactionForm = () => {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -67,6 +69,7 @@ const TransactionForm = ({ onAddTransaction }) => {
     setIsSubmitting(true);
 
     const newTransactionData = {
+      user_id : 1,
       type: formData.type,
       amount: formData.amount,
       category: formData.category,
@@ -76,7 +79,7 @@ const TransactionForm = ({ onAddTransaction }) => {
 
     try {
       // バックエンドAPIへの POST リクエスト
-      const API_URL = 'http://localhost:5000/api'; 
+      const API_URL = 'http://localhost:5000/api/entries'; 
       
       const response = await fetch(API_URL, {
         method: 'POST',
@@ -94,7 +97,7 @@ const TransactionForm = ({ onAddTransaction }) => {
       const savedTransaction = await response.json();
       
       // 親コンポーネント (App.jsx) の状態を更新
-      onAddTransaction(savedTransaction); 
+    //   onAddTransaction(savedTransaction); 
       
       alert('✅ 取引が正常に登録されました！'); 
 
