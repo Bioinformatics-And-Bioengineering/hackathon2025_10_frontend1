@@ -3,13 +3,12 @@ on:
   push:
     branches: [ "main" ] 
     paths: 
-      - "my-app/**" # 👈 パスもサブディレクトリに変更
+      - "my-app/**"
       - ".github/workflows/frontend-deploy.yml"
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    # 【追加】ワークフロー全体の作業ディレクトリを 'my-app' に設定
     defaults:
       run:
         working-directory: ./my-app 
@@ -23,11 +22,23 @@ jobs:
           node-version: "20"
 
       - name: Install Dependencies & Build (Vite)
-        # working-directory: ./my-app が適用されるため、'my-app/' の中で実行される
+        # ビルドが成功しない場合は、ここで強制的に停止させる
         run: |
-          # npm ciが 'my-app/package.json' を読み込むようになる
+          echo "--- Installing dependencies ---"
           npm ci 
+          
+          echo "--- Running Vite build ---"
           npm run build 
+
+          # 【追加】ビルド後のディレクトリ存在確認
+          if [ ! -d "dist" ]; then
+            echo "🚨 エラー: 'dist' ディレクトリが見つかりませんでした。"
+            echo "Viteの設定 (vite.config.js) で出力パスが 'dist' であるか確認してください。"
+            exit 1
+          fi
+          
+          echo "✅ ビルド成果物 (dist/) が確認されました。"
+
 
       # --- ステップ 1: distを一時ディレクトリへ転送 (scp-action) ---
       - name: Upload dist to EC2 (tmp)
@@ -36,12 +47,11 @@ jobs:
           host: ${{ secrets.FE_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          # 転送元は、working-directory内で生成された 'dist' ディレクトリ
+          # working-directory: ./my-app の中の 'dist' を指定
           source: "dist" 
           target: "/home/${{ secrets.SSH_USER }}/" 
 
       # --- ステップ 2: サーバー側で配置（ssh-action） ---
-      # (このステップはサーバー上の操作なので、working-directoryは適用されない)
       - name: Publish on server (atomic swap)
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -54,10 +64,11 @@ jobs:
             SRC_DIR="/home/${{ secrets.SSH_USER }}/dist" 
             TARGET_DIR="${{ secrets.FE_PATH }}"
             
-            # 以下、前回の回答で修正済みのデプロイロジック
+            # デプロイロジック
             sudo mkdir -p "$TARGET_DIR"
             rsync -av --delete "$SRC_DIR"/ "$TARGET_DIR"/
             
+            # 権限調整
             sudo chown -R nginx:nginx "$TARGET_DIR" || true
             sudo find "$TARGET_DIR" -type d -exec chmod 755 {} \;
             sudo find "$TARGET_DIR" -type f -exec chmod 644 {} \;
