@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 // import { Zap } from 'lucide-react'; 
 
 // FlaskサーバーのURL（ポート5000）
-const API_URL = 'https://hackathon2025-10-backend.onrender.com/healthz';
+const API_URL = 'https://hackathon2025-10-backend.onrender.com/healthz2';
 
 // Tailwind CSSクラスを直接使用（Viteプロジェクトの一般的な設定）
 
