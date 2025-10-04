@@ -1,143 +1,53 @@
+// components/Dashboard.jsx
+
 import React, { useState } from 'react';
-import {
-  Box,
-  TextField,
-  Button,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
-  Typography,
-} from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-// date-fnsの日本語ロケールを使用（必要に応じて）
-import { ja } from 'date-fns/locale'; 
+import { Grid, Typography } from '@mui/material';
+import SummaryCard from './SummaryCard.jsx';
+import CalendarView from './CalendarView.jsx'; // 月間カレンダー
 
-// 仮のカテゴリデータ
-const categories = ['食費', '交通費', '趣味', '給与', 'その他'];
+// 仮の全取引データ（日付のフォーマットは CalendarView.jsx と整合性を合わせています）
+const initialTransactions = [
+  { id: 1, type: 'expense', amount: 500, date: '2025-10-01', category: '食費' },
+  { id: 2, type: 'income', amount: 300000, date: '2025-10-01', category: '給与' },
+  { id: 3, type: 'expense', amount: 1200, date: '2025-10-05', category: '交通費' },
+  { id: 4, type: 'expense', amount: 8500, date: '2025-10-20', category: '趣味' },
+];
 
-const TransactionForm = () => {
-  // フォームの初期状態をuseStateで定義
-  const [formData, setFormData] = useState({
-    type: 'expense', // 'expense' または 'income'
-    amount: 0,
-    category: categories[0],
-    date: new Date(),
-    memo: '',
-  });
-
-  // テキスト入力やラジオボタン変更時のハンドラ
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    // 金額フィールドの場合はNumber型に変換
-    setFormData({ 
-      ...formData, 
-      [name]: name === 'amount' ? Number(value) : value 
-    });
-  };
-
-  // Selectボックス変更時のハンドラ
-  const handleSelectChange = (e) => {
-    setFormData({ ...formData, category: e.target.value });
-  };
-
-  // DatePicker変更時のハンドラ
-  const handleDateChange = (date) => {
-    setFormData({ ...formData, date });
-  };
-
-  // フォーム送信時のハンドラ
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('登録データ:', formData);
-    // TODO: ここでバックエンドAPIへデータを送信する処理を実装
-    alert('取引を登録しました！ (コンソールを確認)');
-  };
+const Dashboard = () => {
+  // データを保持
+  const [transactions, setTransactions] = useState(initialTransactions); 
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ja}>
-      <Box component="form" onSubmit={handleSubmit} sx={{ maxWidth: 400, mx: 'auto', p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
-        <Typography variant="h5" gutterBottom>
-          新規取引の登録
-        </Typography>
-
-        {/* 収入/支出の選択 */}
-        <FormControl component="fieldset" margin="normal" fullWidth>
-          <RadioGroup row name="type" value={formData.type} onChange={handleChange}>
-            <FormControlLabel value="expense" control={<Radio color="error" />} label="支出" />
-            <FormControlLabel value="income" control={<Radio color="primary" />} label="収入" />
-          </RadioGroup>
-        </FormControl>
-
-        {/* 金額 */}
-        <TextField
-          label="金額 (¥)"
-          type="number"
-          name="amount"
-          value={formData.amount}
-          onChange={handleChange}
-          margin="normal"
-          fullWidth
-          required
-        />
-
-        {/* 日付 */}
-        {/* MUI v5ではrenderInputは不要になりつつありますが、互換性のため残すこともあります */}
-        <DatePicker
-          label="日付"
-          value={formData.date}
-          onChange={handleDateChange}
-          renderInput={(params) => <TextField {...params} margin="normal" fullWidth required />}
-        />
-
-        {/* カテゴリ */}
-        <FormControl margin="normal" fullWidth required>
-          <InputLabel id="category-label">カテゴリ</InputLabel>
-          <Select
-            labelId="category-label"
-            name="category"
-            value={formData.category}
-            label="カテゴリ"
-            onChange={handleSelectChange}
-          >
-            {categories.map((cat) => (
-              <MenuItem key={cat} value={cat}>
-                {cat}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        {/* メモ */}
-        <TextField
-          label="メモ (任意)"
-          name="memo"
-          value={formData.memo}
-          onChange={handleChange}
-          margin="normal"
-          fullWidth
-          multiline
-          rows={2}
-        />
-
-        {/* 登録ボタン */}
-        <Button
-          type="submit"
-          variant="contained"
-          color="primary"
-          sx={{ mt: 3 }}
-          fullWidth
-        >
-          登録
-        </Button>
-      </Box>
-    </LocalizationProvider>
+    <div>
+      <Typography variant="h4" gutterBottom>
+        月間サマリー (2025年10月)
+      </Typography>
+      
+      {/* SummaryCardを横並びに配置するためのMUI Gridコンポーネント */}
+      <Grid container spacing={3}>
+        <Grid item xs={12} sm={4}>
+          <SummaryCard title="収入合計" amount={350000} type="income" />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <SummaryCard title="支出合計" amount={150000} type="expense" />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <SummaryCard title="今月残高" amount={200000} type="balance" />
+        </Grid>
+      </Grid>
+      
+      <Typography variant="h5" sx={{ mt: 4 }}>
+        カレンダービュー
+      </Typography>
+      
+      {/* 修正後: 正しくデータ（transactions）を渡す */}
+      <CalendarView transactions={transactions} />
+      
+      <Typography variant="h5" sx={{ mt: 4 }}>
+        取引一覧（TODO）
+      </Typography>
+    </div>
   );
 };
 
-export default TransactionForm;
+export default Dashboard;

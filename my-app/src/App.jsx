@@ -12,7 +12,14 @@ import Dashboard from './components/Dashboard.jsx';
 
 function App() {
   return (
-    <Router>
+    <Box sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          width: "100%",
+          padding: 3, // 見やすさのために追加
+        }}>
+      <Router>
       {/* 画面上部のナビゲーションバー */}
       <AppBar position="static">
         <Toolbar>
@@ -39,6 +46,9 @@ function App() {
         </Routes>
       </Container>
     </Router>
+
+    </Box>
+    
   );
 }
 
