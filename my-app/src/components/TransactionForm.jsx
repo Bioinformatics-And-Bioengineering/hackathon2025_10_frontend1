@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; 
 import {
   Box,
   TextField,
@@ -15,53 +16,106 @@ import {
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-// date-fnsの日本語ロケールを使用（必要に応じて）
 import { ja } from 'date-fns/locale'; 
 
 // 仮のカテゴリデータ
 const categories = ['食費', '交通費', '趣味', '給与', 'その他'];
 
-const TransactionForm = () => {
-  // フォームの初期状態をuseStateで定義
+// Dateオブジェクトを "YYYY-MM-DD" 形式の文字列に変換するヘルパー
+const formatDateToKey = (date) => {
+  if (!date) return '';
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Propsとして onAddTransaction を受け取る
+const TransactionForm = ({ onAddTransaction }) => {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
-    type: 'expense', // 'expense' または 'income'
+    type: 'expense', 
     amount: 0,
     category: categories[0],
     date: new Date(),
     memo: '',
   });
+  const [isSubmitting, setIsSubmitting] = useState(false); 
 
-  // テキスト入力やラジオボタン変更時のハンドラ
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // 金額フィールドの場合はNumber型に変換
     setFormData({ 
       ...formData, 
       [name]: name === 'amount' ? Number(value) : value 
     });
   };
-
-  // Selectボックス変更時のハンドラ
+  
   const handleSelectChange = (e) => {
     setFormData({ ...formData, category: e.target.value });
   };
 
-  // DatePicker変更時のハンドラ
   const handleDateChange = (date) => {
     setFormData({ ...formData, date });
   };
 
-  // フォーム送信時のハンドラ
-  const handleSubmit = (e) => {
+
+  // フォーム送信時のハンドラ (非同期関数)
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('登録データ:', formData);
-    // TODO: ここでバックエンドAPIへデータを送信する処理を実装
-    alert('取引を登録しました！ (コンソールを確認)');
+    setIsSubmitting(true);
+
+    const newTransactionData = {
+      type: formData.type,
+      amount: formData.amount,
+      category: formData.category,
+      memo: formData.memo,
+      date: formatDateToKey(formData.date), 
+    };
+
+    try {
+      // バックエンドAPIへの POST リクエスト
+      const API_URL = 'http://localhost:5000/api'; 
+      
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newTransactionData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`API Error: ${errorData.message || response.statusText}`);
+      }
+
+      const savedTransaction = await response.json();
+      
+      // 親コンポーネント (App.jsx) の状態を更新
+      onAddTransaction(savedTransaction); 
+      
+      alert('✅ 取引が正常に登録されました！'); 
+
+      // 画面遷移を実行
+      navigate('/'); 
+
+    } catch (error) {
+      console.error("取引登録エラー:", error);
+      alert(`取引登録中にエラーが発生しました: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ja}>
-      <Box component="form" onSubmit={handleSubmit} sx={{ maxWidth: 400, mx: 'auto', p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
+      <Box 
+        component="form" 
+        onSubmit={handleSubmit} 
+        sx={{ maxWidth: 400, mx: 'auto', p: 2, border: '1px solid #ccc', borderRadius: 2 }}
+      >
         <Typography variant="h5" gutterBottom>
           新規取引の登録
         </Typography>
@@ -74,7 +128,7 @@ const TransactionForm = () => {
           </RadioGroup>
         </FormControl>
 
-        {/* 金額 */}
+        {/* 💰 金額 (¥) - 復元した部分 💰 */}
         <TextField
           label="金額 (¥)"
           type="number"
@@ -87,12 +141,11 @@ const TransactionForm = () => {
         />
 
         {/* 日付 */}
-        {/* MUI v5ではrenderInputは不要になりつつありますが、互換性のため残すこともあります */}
         <DatePicker
           label="日付"
           value={formData.date}
           onChange={handleDateChange}
-          renderInput={(params) => <TextField {...params} margin="normal" fullWidth required />}
+          slotProps={{ textField: { margin: "normal", fullWidth: true, required: true } }}
         />
 
         {/* カテゴリ */}
@@ -132,8 +185,9 @@ const TransactionForm = () => {
           color="primary"
           sx={{ mt: 3 }}
           fullWidth
+          disabled={isSubmitting}
         >
-          登録
+          {isSubmitting ? '登録中...' : '登録'}
         </Button>
       </Box>
     </LocalizationProvider>
