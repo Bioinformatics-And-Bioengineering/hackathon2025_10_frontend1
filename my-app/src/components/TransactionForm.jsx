@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; 
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   TextField,
@@ -16,11 +16,9 @@ import {
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { ja } from 'date-fns/locale'; 
-
+import { ja } from 'date-fns/locale';
 // 仮のカテゴリデータ
 const categories = ['食費', '交通費', '趣味', '給与', 'その他'];
-
 // Dateオブジェクトを "YYYY-MM-DD" 形式の文字列に変換するヘルパー
 const formatDateToKey = (date) => {
   if (!date) return '';
@@ -36,51 +34,42 @@ const formatDateToKey = (date) => {
 // Propsとして onAddTransaction を受け取る
 const TransactionForm = () => {
   const navigate = useNavigate();
-
   const [formData, setFormData] = useState({
-    type: 'expense', 
+    type: 'expense',
     amount: 0,
     category: categories[0],
     date: new Date(),
     memo: '',
   });
-  const [isSubmitting, setIsSubmitting] = useState(false); 
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ 
-      ...formData, 
-      [name]: name === 'amount' ? Number(value) : value 
+    setFormData({
+      ...formData,
+      [name]: name === 'amount' ? Number(value) : value
     });
   };
-  
   const handleSelectChange = (e) => {
     setFormData({ ...formData, category: e.target.value });
   };
-
   const handleDateChange = (date) => {
     setFormData({ ...formData, date });
   };
-
-
   // フォーム送信時のハンドラ (非同期関数)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-
     const newTransactionData = {
       user_id : 1,
       type: formData.type,
       amount: formData.amount,
       category: formData.category,
       memo: formData.memo,
-      date: formatDateToKey(formData.date), 
+      date: formatDateToKey(formData.date),
     };
-
     try {
       // バックエンドAPIへの POST リクエスト
-      const API_URL = 'http://localhost:5000/api/entries'; 
-      
+      const API_URL = 'http://localhost:5000/api/entries';
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
@@ -88,22 +77,16 @@ const TransactionForm = () => {
         },
         body: JSON.stringify(newTransactionData),
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(`API Error: ${errorData.message || response.statusText}`);
       }
-
       const savedTransaction = await response.json();
-      
       // 親コンポーネント (App.jsx) の状態を更新
-    //   onAddTransaction(savedTransaction); 
-      
-      alert('✅ 取引が正常に登録されました！'); 
-
+    //   onAddTransaction(savedTransaction);
+      alert(':チェックマーク_緑: 取引が正常に登録されました！');
       // 画面遷移を実行
-      navigate('/'); 
-
+      navigate('/');
     } catch (error) {
       console.error("取引登録エラー:", error);
       alert(`取引登録中にエラーが発生しました: ${error.message}`);
@@ -111,18 +94,16 @@ const TransactionForm = () => {
       setIsSubmitting(false);
     }
   };
-
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ja}>
-      <Box 
-        component="form" 
-        onSubmit={handleSubmit} 
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
         sx={{ maxWidth: 400, mx: 'auto', p: 2, border: '1px solid #ccc', borderRadius: 2 }}
       >
         <Typography variant="h5" gutterBottom>
           新規取引の登録
         </Typography>
-
         {/* 収入/支出の選択 */}
         <FormControl component="fieldset" margin="normal" fullWidth>
           <RadioGroup row name="type" value={formData.type} onChange={handleChange}>
@@ -130,8 +111,7 @@ const TransactionForm = () => {
             <FormControlLabel value="income" control={<Radio color="primary" />} label="収入" />
           </RadioGroup>
         </FormControl>
-
-        {/* 💰 金額 (¥) - 復元した部分 💰 */}
+        {/* :お金の袋: 金額 (¥) - 復元した部分 :お金の袋: */}
         <TextField
           label="金額 (¥)"
           type="number"
@@ -142,7 +122,6 @@ const TransactionForm = () => {
           fullWidth
           required
         />
-
         {/* 日付 */}
         <DatePicker
           label="日付"
@@ -150,7 +129,6 @@ const TransactionForm = () => {
           onChange={handleDateChange}
           slotProps={{ textField: { margin: "normal", fullWidth: true, required: true } }}
         />
-
         {/* カテゴリ */}
         <FormControl margin="normal" fullWidth required>
           <InputLabel id="category-label">カテゴリ</InputLabel>
@@ -168,7 +146,6 @@ const TransactionForm = () => {
             ))}
           </Select>
         </FormControl>
-
         {/* メモ */}
         <TextField
           label="メモ (任意)"
@@ -180,7 +157,6 @@ const TransactionForm = () => {
           multiline
           rows={2}
         />
-
         {/* 登録ボタン */}
         <Button
           type="submit"
@@ -196,5 +172,4 @@ const TransactionForm = () => {
     </LocalizationProvider>
   );
 };
-
 export default TransactionForm;
