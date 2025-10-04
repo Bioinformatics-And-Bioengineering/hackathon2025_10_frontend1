@@ -30,8 +30,8 @@ const App = () => {
         }
 
         const data = await response.json();
-        setApiMessage(data);
-        console.log(data);
+        setApiMessage(data.ok);
+        
         setError(null);
       } catch (err) {
         console.error("API通信エラー:", err);
