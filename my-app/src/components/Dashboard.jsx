@@ -31,20 +31,10 @@ const Dashboard = () => {
               <SummaryCard title="今月残高" amount={200000} type="balance" />
             </Grid>
           </Grid>
-          <Typography variant="h5" sx={{ mt: 4 }}>
-            カレンダービュー
-          </Typography>
-          <CalendarView transactions={transactions} />
-          <Typography variant="h5" sx={{ mt: 4 }}>
-            取引一覧（TODO）
-          </Typography>
-        </Paper>
-      </Grid>
-      {/* 右カラム：育成（Base64画像） */}
-      <Grid item xs={12} md={5}>
+          <Grid item xs={12} md={5}>
         <Paper
           sx={{
-            p: 2,
+            p: 1,
             height: '100%',
             width: '100%',
             display: 'flex',
@@ -55,6 +45,17 @@ const Dashboard = () => {
           <AvatarPanel userId={1} />
         </Paper>
       </Grid>
+          <Typography variant="h5" sx={{ mt: 4 }}>
+            カレンダービュー
+          </Typography>
+          <CalendarView transactions={transactions} />
+          <Typography variant="h5" sx={{ mt: 4 }}>
+            取引一覧（TODO）
+          </Typography>
+        </Paper>
+      </Grid>
+      {/* 右カラム：育成（Base64画像） */}
+      
     </Grid>
   );
 };

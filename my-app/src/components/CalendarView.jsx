@@ -23,10 +23,13 @@ const aggregateTransactions = (transactions) => {
       aggregatedData[dateKey] = { income: 0, expense: 0 };
     }
 
+    // amountが文字列の場合があるためNumber()で変換
+    const amount = Number(t.amount); 
+
     if (t.type === 'income') {
-      aggregatedData[dateKey].income += t.amount;
+      aggregatedData[dateKey].income += amount;
     } else if (t.type === 'expense') {
-      aggregatedData[dateKey].expense += t.amount;
+      aggregatedData[dateKey].expense += amount;
     }
   });
 
@@ -37,20 +40,20 @@ const aggregateTransactions = (transactions) => {
  * カレンダーの日付を計算するヘルパー関数
  */
 const getCalendarDays = (year, month) => {
+  // monthは1-12
   const date = new Date(year, month - 1, 1);
   const firstDayOfMonth = date.getDay(); // 0 (Sun) - 6 (Sat)
   const daysInMonth = new Date(year, month, 0).getDate();
   
   const days = [];
   
-  // 前月の日付でカレンダーの先頭を埋める (必要に応じて)
-  // month - 1 は現在の月 (0-11)。前月は month - 2。
-  // new Date(year, month - 2, day) で日付キーを生成
+  // 前月の日付でカレンダーの先頭を埋める
   const prevMonthDaysCount = new Date(year, month - 1, 0).getDate();
+  // 曜日の数だけ前月の日付を挿入
+  const prevMonthYear = month === 1 ? year - 1 : year;
+  const prevMonthNum = month === 1 ? 12 : month - 1;
   for (let i = firstDayOfMonth; i > 0; i--) {
     const dayNum = prevMonthDaysCount - i + 1;
-    const prevMonthYear = month === 1 ? year - 1 : year;
-    const prevMonthNum = month === 1 ? 12 : month - 1;
     days.push({ 
       day: dayNum, 
       isCurrentMonth: false,
@@ -60,18 +63,17 @@ const getCalendarDays = (year, month) => {
 
   // 今月の日付
   for (let i = 1; i <= daysInMonth; i++) {
+    const dayDate = new Date(year, month - 1, i);
     days.push({ 
       day: i, 
       isCurrentMonth: true, 
-      isToday: (new Date().toDateString() === new Date(year, month - 1, i).toDateString()),
+      isToday: (new Date().toDateString() === dayDate.toDateString()),
       dateKey: `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`
     });
   }
 
-  // 翌月の日付でカレンダーの末尾を埋める
+  // 翌月の日付でカレンダーの末尾を埋める (常に6週間分の42セルを埋める)
   const remainingDays = 42 - days.length; 
-  // month + 1 は現在の月 (1-12)。翌月は month + 1。
-  // new Date(year, month, day) で日付キーを生成
   const nextMonthYear = month === 12 ? year + 1 : year;
   const nextMonthNum = month === 12 ? 1 : month + 1;
   for (let i = 1; i <= remainingDays; i++) {
@@ -89,18 +91,19 @@ const getCalendarDays = (year, month) => {
  * 家計簿アプリ向けカレンダーコンポーネント
  * @param {object} props 
  * @param {Array<object>} props.transactions - 取引データの配列
- * @param {function} props.onDateClick - 日付がクリックされたときに呼び出される関数
+ * @param {function} props.onDateClick - 日付がクリックされたときに呼び出される関数 (現状未使用)
  */
 const CalendarView = ({ transactions = [], onDateClick }) => {
+  // カレンダー表示の基準日
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth() + 1; // 1-12
 
-  // 取引データを集計
+  // 取引データを集計 (transactionsが変わるたびに再計算)
   const aggregatedData = useMemo(() => aggregateTransactions(transactions), [transactions]);
 
-  // カレンダーの日付を取得
+  // カレンダーの日付を取得 (年と月が変わるたびに再計算)
   const calendarDays = useMemo(() => getCalendarDays(year, month), [year, month]);
 
   const monthName = currentDate.toLocaleString('ja-JP', { year: 'numeric', month: 'long' }); // 日本語の月名表示
