@@ -1,108 +1,62 @@
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-
-import React, { useState, useEffect } from 'react';
-// アイコンを使う場合は、ここでインポート（例: lucide-reactから）
-// import { Zap } from 'lucide-react'; 
-
-// FlaskサーバーのURL（ポート5000）
-const API_URL = 'https://hackathon2025-10-backend.onrender.com/healthz';
-
-// Tailwind CSSクラスを直接使用（Viteプロジェクトの一般的な設定）
-
-const App = () => {
-  // カウンターの状態管理
-  const [count, setCount] = useState(0);
-  // APIメッセージの状態管理
-  const [apiMessage, setApiMessage] = useState('APIからのメッセージを待機中...');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // コンポーネントがマウントされた後にAPIを呼び出す
-  useEffect(() => {
-    const fetchApiData = async () => {
-      try {
-        const response = await fetch(API_URL);
-
-        if (!response.ok) {
-          throw new Error(`HTTPエラー: ${response.status}。サーバーが起動しているか確認してください。`);
-        }
-
-        const data = await response.json();
-        setApiMessage(data.message);
-        
-        setError(null);
-      } catch (err) {
-        console.error("API通信エラー:", err);
-        // エラーが発生した場合、メッセージを表示し、エラー状態を記録
-        setError(`接続エラー: ${err.message}. Flaskサーバーがポート5000で起動しているか確認してください。`);
-        setApiMessage('APIに接続できませんでした。');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchApiData();
-  }, []); // []でマウント時のみ実行
-
+import React, { useState } from 'react'; // useStateをインポート
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { Container, AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
+// 作成したコンポーネントをインポート
+import TransactionForm from './components/TransactionForm.jsx';
+import Dashboard from './components/Dashboard.jsx';
+function App() {
+  // アプリケーション全体で取引データを管理するための状態
+  const [transactions, setTransactions] = useState([]);
+  /**
+   * TransactionFormから新しい取引データを受け取り、一覧に追加する関数
+   * @param {object} newTransaction - TransactionFormから渡される新しい取引オブジェクト
+   */
+  const handleAddTransaction = (newTransaction) => {
+    // 既存のリストに新しい取引を追加して状態を更新
+    setTransactions(prevTransactions => [...prevTransactions, newTransaction]);
+    console.log('新しい取引がApp.jsxで受け取られました:', newTransaction);
+    // ここでDashboardのデータを更新するなどの処理も可能
+  };
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-lg bg-white shadow-xl rounded-xl p-8 space-y-8">
-        
-        <h1 className="text-3xl font-extrabold text-gray-800 text-center border-b-2 pb-4">
-          ハッカソン フロントエンドテストアプリ (Vite + React)
-        </h1>
-        
-        {/* API通信結果表示エリア */}
-        <div className="p-4 bg-indigo-50 border-l-4 border-indigo-500 rounded-lg">
-          <h2 className="text-xl font-semibold text-indigo-800 mb-2">
-            Flask バックエンド連携テスト
-          </h2>
-          {loading && (
-            <p className="text-indigo-600 animate-pulse">📡 サーバー接続中...</p>
-          )}
-          {error && (
-            <p className="text-red-600 font-medium">⚠️ {error}</p>
-          )}
-          {!loading && !error && (
-            <p className="text-lg font-bold text-gray-700">
-              メッセージ: <span className="text-indigo-700">{apiMessage}</span>
-            </p>
-          )}
-        </div>
-
-        {/* カウンター機能エリア */}
-        <div className="flex flex-col items-center space-y-4 pt-4 border-t border-gray-200">
-          <h2 className="text-2xl font-semibold text-gray-800">
-            カウンターステータス
-          </h2>
-          <p className="text-6xl font-black text-blue-600">
-            {count}
-          </p>
-          <div className="flex space-x-4">
-            <button
-              onClick={() => setCount(c => c + 1)}
-              className="px-6 py-3 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition duration-150 transform hover:scale-105"
-            >
-              カウントアップ
-            </button>
-            <button
-              onClick={() => setCount(0)}
-              className="px-6 py-3 bg-red-500 text-white font-bold rounded-lg shadow-md hover:bg-red-600 transition duration-150 transform hover:scale-105"
-            >
-              リセット
-            </button>
-          </div>
-        </div>
-
-      </div>
-      
-      <p className="mt-6 text-sm text-gray-500">
-        このファイルを編集して、開発を始めましょう！
-      </p>
-    </div>
+    <Box sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        width: "100%",
+        padding: 3,
+      }}>
+      <Router>
+        {/* 画面上部のナビゲーションバー */}
+        <AppBar position="static">
+          <Toolbar>
+            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+              家計簿アプリ
+            </Typography>
+            <Button color="inherit" component={Link} to="/">
+              概要
+            </Button>
+            <Button color="inherit" component={Link} to="/add">
+              登録
+            </Button>
+          </Toolbar>
+        </AppBar>
+        {/* ページコンテンツ用のコンテナ */}
+        <Container sx={{ mt: 4, mb: 4 }}>
+          <Routes>
+            {/* ホーム画面：SummaryCardやTransactionListを表示 */}
+            {/* Dashboardにも取引データを渡せるようにしておく */}
+            <Route path="/" element={<Dashboard transactions={transactions} />} />
+            {/* 登録画面：TransactionFormを表示 */}
+            {/* ★★★ ここが重要 ★★★
+                onAddTransactionという名前で、作成した関数を渡す */}
+            <Route
+              path="/add"
+              element={<TransactionForm onAddTransaction={handleAddTransaction} />}
+            />
+          </Routes>
+        </Container>
+      </Router>
+    </Box>
   );
-};
-
+}
 export default App;

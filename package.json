@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "@mui/x-date-pickers": "^8.12.0",
+    "@tanstack/react-query": "^5.90.2",
+    "axios": "^1.12.2",
+    "dayjs": "^1.11.18",
+    "react-router-dom": "^7.9.3"
+  }
+}
