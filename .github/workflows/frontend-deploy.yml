@@ -2,20 +2,17 @@ name: Deploy Frontend (Vite) to EC2
 on:
   push:
     branches: [ "main" ] 
-    paths: # 変更があった場合にのみ実行されるパスのリスト
-      - "**/*.js"
-      - "**/*.jsx"
-      - "**/*.tsx"
-      - "**/*.ts"
-      - "package.json"
-      - "package-lock.json"
-      - "vite.config.*"
-      - "index.html"
-      - "public/**"
-      - "src/**"
+    paths: 
+      - "my-app/**" # 👈 パスもサブディレクトリに変更
+      - ".github/workflows/frontend-deploy.yml"
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    # 【追加】ワークフロー全体の作業ディレクトリを 'my-app' に設定
+    defaults:
+      run:
+        working-directory: ./my-app 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -23,13 +20,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20" # Node.jsのバージョンを指定
+          node-version: "20"
 
       - name: Install Dependencies & Build (Vite)
+        # working-directory: ./my-app が適用されるため、'my-app/' の中で実行される
         run: |
-          # 依存関係のインストール（CI環境ではnpm ciが推奨）
+          # npm ciが 'my-app/package.json' を読み込むようになる
           npm ci 
-          # Viteのビルドコマンドを実行
           npm run build 
 
       # --- ステップ 1: distを一時ディレクトリへ転送 (scp-action) ---
@@ -39,13 +36,12 @@ jobs:
           host: ${{ secrets.FE_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          # 転送元: distディレクトリ全体を再帰的に転送
+          # 転送元は、working-directory内で生成された 'dist' ディレクトリ
           source: "dist" 
-          # 転送先: SSHユーザーのホームディレクトリ配下に一時ディレクトリを作成
-          # 転送先は末尾にスラッシュを付けない方が安全です
           target: "/home/${{ secrets.SSH_USER }}/" 
 
       # --- ステップ 2: サーバー側で配置（ssh-action） ---
+      # (このステップはサーバー上の操作なので、working-directoryは適用されない)
       - name: Publish on server (atomic swap)
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -55,29 +51,16 @@ jobs:
           script: |
             set -e
             
-            # 変数を設定
-            # fe_tmpディレクトリは一つ上のステップで /home/user/dist に転送されています
             SRC_DIR="/home/${{ secrets.SSH_USER }}/dist" 
             TARGET_DIR="${{ secrets.FE_PATH }}"
             
-            # --- 【重要】権限に関する修正 ---
-            # 1. ターゲットディレクトリの作成（sudoで実行）
+            # 以下、前回の回答で修正済みのデプロイロジック
             sudo mkdir -p "$TARGET_DIR"
-            
-            # 2. rsyncでファイル転送
-            # rsyncをsudo付きで実行すると、ファイルのオーナーがrootになる場合があります
-            # 今回はsudoなしで実行し、後のchownで権限を調整します
             rsync -av --delete "$SRC_DIR"/ "$TARGET_DIR"/
             
-            # 3. ファイルの所有者と権限を調整
-            # Nginxが動くユーザー（例: nginx, www-data）に変更
-            # 実行ユーザーがsudo権限を持っていることを前提とします
             sudo chown -R nginx:nginx "$TARGET_DIR" || true
             sudo find "$TARGET_DIR" -type d -exec chmod 755 {} \;
             sudo find "$TARGET_DIR" -type f -exec chmod 644 {} \;
             
-            # 4. 一時ディレクトリ（転送元）の削除
             rm -rf "$SRC_DIR"
-            
-            # 5. Nginxサービスのリロード（設定変更がないなら不要ですが安全のため残します）
             sudo systemctl reload nginx || true
