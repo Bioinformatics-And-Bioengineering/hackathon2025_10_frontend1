@@ -33,7 +33,6 @@ const Dashboard = () => {
           </Grid>
           <br></br>
           <br></br>
-
           <Grid item xs={12} md={5}>
   <Paper
     elevation={8}
@@ -76,7 +75,6 @@ const Dashboard = () => {
         </Paper>
       </Grid>
       {/* 右カラム：育成（Base64画像） */}
-      
     </Grid>
   );
 };
