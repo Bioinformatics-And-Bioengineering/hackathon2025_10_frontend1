@@ -10,9 +10,10 @@ const getYearMonth = () => {
   const m = String(d.getMonth() + 1).padStart(2, '0');
   return `${y}-${m}`;
 };
-// API ベースURL（.env で VITE_API_BASE を設定していればそちら優先）
-const API_BASE = import.meta?.env?.VITE_API_BASE || 'https://hackathon2025-10-backend.onrender.com';
-// 仮の全取引データ（そのまま残してOK）
+const API_BASE = import.meta?.env?.VITE_API_BASE || "https://hackathon2025-10-backend.onrender.com";
+const month = getYearMonth();
+const userId = 1;
+// カレンダー用の仮データ（必要に応じてAPIに置換OK）
 const initialTransactions = [
   { id: 1, type: 'expense', amount: 500, date: '2025-10-01', category: '食費' },
   { id: 2, type: 'income',  amount: 300000, date: '2025-10-01', category: '給与' },
