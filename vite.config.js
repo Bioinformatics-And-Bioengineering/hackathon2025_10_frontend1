@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 
 // リポジトリ名をここで設定します。
 // 例: https://<ユーザー名>.github.io/my-react-app/
-const repoName = 'hackathon2025_10_frontend'; // 👈 あなたのリポジトリ名に変更してください
+const repoName = 'hackathon2025_10_frontend1'; // 👈 あなたのリポジトリ名に変更してください
 
 export default defineConfig({
   plugins: [react()],
