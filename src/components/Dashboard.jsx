@@ -11,7 +11,7 @@ const getYearMonth = () => {
   const m = String(d.getMonth() + 1).padStart(2, "0");
   return `${y}-${m}`;
 };
-const API_BASE = import.meta?.env?.VITE_API_BASE || "https://hackathon2025-10-backend.onrender.com";
+const API_BASE = "https://hackathon2025-10-backend.onrender.com";
 const month = getYearMonth();
 const userId = 1;
 // カレンダー用の仮データ（必要に応じてAPIに置換OK）
