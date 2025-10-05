@@ -1,0 +1,83 @@
+name: Deploy Frontend (Vite) to EC2
+on:
+  push:
+    branches: [ "main" ] 
+    paths: 
+      - "my-app/**"
+      - ".github/workflows/frontend-deploy.yml"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    # working-directoryは './my-app' で維持
+    defaults:
+      run:
+        working-directory: ./my-app 
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Dependencies & Build (Vite)
+        run: |
+          echo "--- Installing dependencies ---"
+          npm ci 
+          
+          echo "--- Running Vite build ---"
+          # ビルドを実行し、失敗したら強制終了 (set -e のおかげ)
+          npm run build 
+
+          # 【追加】ビルド後のファイル数をチェック
+          FILE_COUNT=$(find dist -type f | wc -l)
+          if [ "$FILE_COUNT" -eq 0 ]; then
+            echo "🚨 エラー: 'dist' ディレクトリにファイルがありません。ビルドが失敗したか、vite.config.jsを確認してください。"
+            exit 1
+          fi
+          echo "✅ dist/内に $FILE_COUNT 個のファイルを確認しました。"
+          
+      # --- ステップ 1: distを一時ディレクトリへ転送 (scp-action) ---
+      - name: Upload dist to EC2 (tmp)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.FE_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          # 【重要修正】GitHub Actionsのルートパスと my-app/dist を結合して絶対パスで指定
+          # GITHUB_WORKSPACEはリポジトリのルートディレクトリを指します
+          source: ${{ github.workspace }}/my-app/dist # 👈 絶対パスで指定
+          # 転送先: SSHユーザーのホームディレクトリ配下
+          target: "/home/${{ secrets.SSH_USER }}/" 
+
+      # --- ステップ 2: サーバー側で配置（ssh-action） ---
+      - name: Publish on server (atomic swap)
+        # このステップはSSH接続してサーバー側でコマンドを実行するため、
+        # working-directory: ./my-app は影響しません。
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.FE_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -e
+            
+            # サーバー側では /home/user/dist に展開されている
+            SRC_DIR="/home/${{ secrets.SSH_USER }}/dist" 
+            TARGET_DIR="${{ secrets.FE_PATH }}"
+            
+            # デプロイロジック
+            sudo mkdir -p "$TARGET_DIR"
+            # dist/* の内容をターゲットにコピー
+            rsync -av --delete "$SRC_DIR"/ "$TARGET_DIR"/ 
+            
+            # 権限調整 (Nginxユーザー)
+            sudo chown -R nginx:nginx "$TARGET_DIR" || true
+            sudo find "$TARGET_DIR" -type d -exec chmod 755 {} \;
+            sudo find "$TARGET_DIR" -type f -exec chmod 644 {} \;
+            
+            # 一時ディレクトリの削除
+            rm -rf "$SRC_DIR"
+            sudo systemctl reload nginx || true
