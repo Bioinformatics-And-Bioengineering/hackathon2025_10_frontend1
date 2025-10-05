@@ -11,7 +11,7 @@ const getYearMonth = () => {
   return `${y}-${m}`;
 };
 // API ベースURL（.env で VITE_API_BASE を設定していればそちら優先）
-const API_BASE = import.meta?.env?.VITE_API_BASE || 'http://localhost:5000';
+const API_BASE = import.meta?.env?.VITE_API_BASE || 'https://hackathon2025-10-backend.onrender.com';
 // 仮の全取引データ（そのまま残してOK）
 const initialTransactions = [
   { id: 1, type: 'expense', amount: 500, date: '2025-10-01', category: '食費' },

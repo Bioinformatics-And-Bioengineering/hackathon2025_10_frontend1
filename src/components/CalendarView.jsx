@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import './CalendarView.css'; // ★追加: 外部CSSファイルをインポート
-
 // ====================================================================
 // 型定義 (TypeScriptではないですが、データの構造を明確にするために記述)
 // type Transaction = {
@@ -121,7 +120,6 @@ const CalendarView = ({ transactions = [], onDateClick }) => {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 }).format(amount);
   };
-
   return (
     <div className="calendar-view">
       {/* ヘッダー: 月ナビゲーション */}
@@ -137,7 +135,6 @@ const CalendarView = ({ transactions = [], onDateClick }) => {
           <div key={day} className="day-name">{day}</div>
         ))}
       </div>
-
       {/* カレンダーグリッド */}
       <div className="calendar-grid">
         {calendarDays.map((day, index) => {
