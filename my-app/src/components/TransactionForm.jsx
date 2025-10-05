@@ -66,12 +66,7 @@ const TransactionForm = ({ onAddTransaction }) => {
     };
     try {
       // バックエンドAPIへの POST リクエスト
-<<<<<<< HEAD
       const API_URL = 'http://localhost:5000/api/entries';
-=======
-      const API_URL = 'http://localhost:5000/api'; 
-      
->>>>>>> parent of 75d7f5f (バックとつなげた)
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
@@ -85,15 +80,8 @@ const TransactionForm = ({ onAddTransaction }) => {
       }
       const savedTransaction = await response.json();
       // 親コンポーネント (App.jsx) の状態を更新
-<<<<<<< HEAD
     //   onAddTransaction(savedTransaction);
       alert(':チェックマーク_緑: 取引が正常に登録されました！');
-=======
-      onAddTransaction(savedTransaction); 
-      
-      alert('✅ 取引が正常に登録されました！'); 
-
->>>>>>> parent of 75d7f5f (バックとつなげた)
       // 画面遷移を実行
       navigate('/');
     } catch (error) {
