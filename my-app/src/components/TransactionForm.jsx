@@ -28,11 +28,9 @@ const formatDateToKey = (date) => {
   const day = String(d.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
-// const onAddTransaction = () =>{
-//    setTransactions(prev => [...prev, newTransaction]);
-// }
+
 // Propsとして onAddTransaction を受け取る
-const TransactionForm = () => {
+const TransactionForm = ({ onAddTransaction }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     type: 'expense',
@@ -60,7 +58,6 @@ const TransactionForm = () => {
     e.preventDefault();
     setIsSubmitting(true);
     const newTransactionData = {
-      user_id : 1,
       type: formData.type,
       amount: formData.amount,
       category: formData.category,
@@ -69,7 +66,12 @@ const TransactionForm = () => {
     };
     try {
       // バックエンドAPIへの POST リクエスト
+<<<<<<< HEAD
       const API_URL = 'http://localhost:5000/api/entries';
+=======
+      const API_URL = 'http://localhost:5000/api'; 
+      
+>>>>>>> parent of 75d7f5f (バックとつなげた)
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
@@ -83,8 +85,15 @@ const TransactionForm = () => {
       }
       const savedTransaction = await response.json();
       // 親コンポーネント (App.jsx) の状態を更新
+<<<<<<< HEAD
     //   onAddTransaction(savedTransaction);
       alert(':チェックマーク_緑: 取引が正常に登録されました！');
+=======
+      onAddTransaction(savedTransaction); 
+      
+      alert('✅ 取引が正常に登録されました！'); 
+
+>>>>>>> parent of 75d7f5f (バックとつなげた)
       // 画面遷移を実行
       navigate('/');
     } catch (error) {
