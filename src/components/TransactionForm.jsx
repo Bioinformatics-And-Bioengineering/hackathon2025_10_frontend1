@@ -79,7 +79,7 @@ const TransactionForm = () => {
 
     try {
       // バックエンドAPIへの POST リクエスト
-      const API_URL = 'http://localhost:5000/api/entries'; 
+      const API_URL = 'https://hackathon2025-10-backend.onrender.com/api/entries'; 
       
       const response = await fetch(API_URL, {
         method: 'POST',
